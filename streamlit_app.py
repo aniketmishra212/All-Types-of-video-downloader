@@ -406,6 +406,18 @@ fetch_col1, fetch_col2, fetch_col3 = st.columns([1, 2, 1])
 with fetch_col2:
     fetch_clicked = st.button("🔍  Fetch Video Info", use_container_width=True, type="primary")
 
+def clean_url(raw_url: str) -> str:
+    if not raw_url:
+        return ""
+    u = raw_url.strip()
+    parts = u.split()
+    if parts:
+        u = parts[0].rstrip(",;")
+    return u
+
+
+url = clean_url(url)
+
 if fetch_clicked and url:
     if not url.startswith(("http://", "https://")):
         st.error("❌ Please enter a valid URL (starting with http:// or https://)")
@@ -486,14 +498,20 @@ if st.session_state.video_info:
                 with open(filepath, "rb") as f:
                     file_bytes = f.read()
 
+                ext = ".mp3" if filename.endswith(".mp3") else ".mp4"
+                base_name = os.path.splitext(filename)[0]
+                safe_name = re.sub(r'[^\w\s\.-]', '_', base_name).strip()[:80] + ext
+                if not safe_name or safe_name.startswith('.'):
+                    safe_name = "downloaded_video" + ext
+
                 st.markdown("")
                 save_col1, save_col2, save_col3 = st.columns([1, 2, 1])
                 with save_col2:
-                    mime = "audio/mpeg" if filename.endswith(".mp3") else "video/mp4"
+                    mime = "audio/mpeg" if ext == ".mp3" else "video/mp4"
                     st.download_button(
                         label=f"💾 Save File ({format_size(result['size'])})",
                         data=file_bytes,
-                        file_name=filename,
+                        file_name=safe_name,
                         mime=mime,
                         use_container_width=True,
                     )
