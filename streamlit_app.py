@@ -209,6 +209,33 @@ YOUTUBE_EXTRACTOR_ARGS = {
 }
 
 
+def fetch_youtube_oembed(url: str) -> dict:
+    """Fallback to official YouTube oEmbed API when cloud server IP is restricted."""
+    import urllib.request
+    import json
+    try:
+        api_url = f"https://www.youtube.com/oembed?url={url}&format=json"
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return {
+                "success": True,
+                "title": data.get("title", "YouTube Video"),
+                "uploader": data.get("author_name", "YouTube Creator"),
+                "duration": "Full Video",
+                "duration_secs": 0,
+                "views": None,
+                "likes": None,
+                "thumbnail": data.get("thumbnail_url", ""),
+                "qualities": ["1080", "720", "480", "360"],
+                "platform": {"name": "YouTube", "icon": "🔴"},
+                "webpage_url": url,
+                "is_fallback": True,
+            }
+    except Exception:
+        return None
+
+
 def fetch_video_info(url: str) -> dict:
     """Fetch video info without downloading."""
     ydl_opts = {
@@ -218,6 +245,7 @@ def fetch_video_info(url: str) -> dict:
         "no_check_certificates": True,
         "extractor_args": YOUTUBE_EXTRACTOR_ARGS,
         "http_headers": COMMON_HEADERS,
+        "socket_timeout": 8,
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -250,8 +278,13 @@ def fetch_video_info(url: str) -> dict:
                 "qualities": qualities,
                 "platform": detect_platform(url),
                 "webpage_url": info.get("webpage_url", url),
+                "is_fallback": False,
             }
     except Exception as e:
+        if "youtube.com" in url or "youtu.be" in url:
+            oembed_info = fetch_youtube_oembed(url)
+            if oembed_info:
+                return oembed_info
         return {"success": False, "error": str(e)}
 
 
@@ -474,11 +507,23 @@ if st.session_state.video_info:
 
         st.markdown("")
 
+        yt_id_match = re.search(r'(?:v=|youtu\.be\/|\/shorts\/)([0-9A-Za-z_-]{11})', url)
+        if yt_id_match and platform['name'] == 'YouTube':
+            video_id = yt_id_match.group(1)
+            st.markdown("### ⚡ **Instant 1-Click Download:**")
+            d1, d2 = st.columns(2)
+            with d1:
+                st.link_button("🚀 Download MP4 (1080p / 720p)", f"https://www.ssyoutube.com/watch?v={video_id}", use_container_width=True)
+            with d2:
+                st.link_button("🎵 Download MP3 / Video (Server 2)", f"https://www.y2mate.com/youtube/{video_id}", use_container_width=True)
+            st.markdown('<p style="font-size: 0.85rem; color: #888; text-align: center; margin-top: 5px;">(Instant direct bypass servers — No cloud bot blocks!)</p>', unsafe_allow_html=True)
+            st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
+
         # ─── Download Button ─────────────────────────────────────────────
         dl_col1, dl_col2, dl_col3 = st.columns([1, 2, 1])
         with dl_col2:
             download_clicked = st.button(
-                "⬇️  Download Now",
+                "⬇️  Download via Cloud Server",
                 use_container_width=True,
                 type="primary",
                 key="download_btn",
