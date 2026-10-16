@@ -203,13 +203,12 @@ COMMON_HEADERS = {
 
 YOUTUBE_EXTRACTOR_ARGS = {
     "youtube": {
-        "player_client": ["android", "ios", "mweb"],
+        "player_client": ["android"],
         "player_skip": ["webpage", "configs"],
     }
 }
 
 
-@st.cache_data(ttl=300, show_spinner=False)
 def fetch_video_info(url: str) -> dict:
     """Fetch video info without downloading."""
     ydl_opts = {
@@ -282,13 +281,13 @@ def download_video(url: str, quality: str = "best", audio_only: bool = False) ->
         })
     else:
         if quality == "best":
-            ydl_opts["format"] = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best"
+            ydl_opts["format"] = "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
         elif str(quality).isdigit():
             h = quality
             ydl_opts["format"] = (
+                f"best[height<={h}][ext=mp4]/"
                 f"bestvideo[height<={h}][ext=mp4]+bestaudio[ext=m4a]/"
                 f"bestvideo[height<={h}]+bestaudio/"
-                f"best[height<={h}][ext=mp4]/"
                 f"best[height<={h}]/best"
             )
         else:
