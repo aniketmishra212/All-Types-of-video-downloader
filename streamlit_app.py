@@ -194,6 +194,21 @@ def detect_platform(url: str) -> dict:
     return {"name": "Other", "icon": "🌐"}
 
 
+COMMON_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Sec-Fetch-Mode": "navigate",
+}
+
+YOUTUBE_EXTRACTOR_ARGS = {
+    "youtube": {
+        "player_client": ["android", "ios", "mweb"],
+        "player_skip": ["webpage", "configs"],
+    }
+}
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_video_info(url: str) -> dict:
     """Fetch video info without downloading."""
@@ -201,6 +216,9 @@ def fetch_video_info(url: str) -> dict:
         "quiet": True,
         "no_warnings": True,
         "extract_flat": False,
+        "no_check_certificates": True,
+        "extractor_args": YOUTUBE_EXTRACTOR_ARGS,
+        "http_headers": COMMON_HEADERS,
     }
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -249,6 +267,8 @@ def download_video(url: str, quality: str = "best", audio_only: bool = False) ->
         "no_warnings": True,
         "merge_output_format": "mp4",
         "no_check_certificates": True,
+        "extractor_args": YOUTUBE_EXTRACTOR_ARGS,
+        "http_headers": COMMON_HEADERS,
     }
 
     if audio_only:
@@ -262,14 +282,17 @@ def download_video(url: str, quality: str = "best", audio_only: bool = False) ->
         })
     else:
         if quality == "best":
-            ydl_opts["format"] = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best"
+            ydl_opts["format"] = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best[ext=mp4]/best"
         elif str(quality).isdigit():
             h = quality
             ydl_opts["format"] = (
                 f"bestvideo[height<={h}][ext=mp4]+bestaudio[ext=m4a]/"
                 f"bestvideo[height<={h}]+bestaudio/"
+                f"best[height<={h}][ext=mp4]/"
                 f"best[height<={h}]/best"
             )
+        else:
+            ydl_opts["format"] = "best[ext=mp4]/best"
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
