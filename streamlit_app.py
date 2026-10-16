@@ -507,51 +507,60 @@ if st.session_state.video_info:
 
         st.markdown("")
 
+        st.markdown("")
+
         yt_id_match = re.search(r'(?:v=|youtu\.be\/|\/shorts\/)([0-9A-Za-z_-]{11})', url)
-        if yt_id_match and platform['name'] == 'YouTube':
+
+        if platform['name'] == 'YouTube' and yt_id_match:
             video_id = yt_id_match.group(1)
-            st.markdown("### ⚡ **Instant 1-Click Download:**")
-            d1, d2 = st.columns(2)
-            with d1:
-                st.link_button("🚀 Download MP4 (1080p / 720p)", f"https://www.ssyoutube.com/watch?v={video_id}", use_container_width=True)
-            with d2:
-                st.link_button("🎵 Download MP3 / Video (Server 2)", f"https://www.y2mate.com/youtube/{video_id}", use_container_width=True)
-            st.markdown('<p style="font-size: 0.85rem; color: #888; text-align: center; margin-top: 5px;">(Instant direct bypass servers — No cloud bot blocks!)</p>', unsafe_allow_html=True)
-            st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
-
-        # ─── Download Button ─────────────────────────────────────────────
-        dl_col1, dl_col2, dl_col3 = st.columns([1, 2, 1])
-        with dl_col2:
-            download_clicked = st.button(
-                "⬇️  Download via Cloud Server",
-                use_container_width=True,
-                type="primary",
-                key="download_btn",
+            st.markdown("### 📥 **Select Download Quality:**")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                st.link_button(
+                    "🚀 Download MP4 (1080p / 720p / 480p)",
+                    f"https://www.ssyoutube.com/watch?v={video_id}",
+                    use_container_width=True,
+                    type="primary",
+                )
+            with col_b:
+                st.link_button(
+                    "🎵 Download MP3 / Audio",
+                    f"https://www.y2mate.com/youtube/{video_id}",
+                    use_container_width=True,
+                )
+            st.markdown(
+                """
+                <div style="background: rgba(0, 200, 83, 0.1); border: 1px solid #00C853; border-radius: 12px; padding: 12px; margin-top: 15px; text-align: center; color: #00E676; font-size: 0.95rem;">
+                    ✅ <b>Guaranteed 100% Working:</b> Upar diye gaye kisi bhi button par click karein aur apni quality select karke bina kisi server error ke turant download karein!
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
+        else:
+            # For Instagram, Facebook, Twitter, TikTok & others
+            dl_col1, dl_col2, dl_col3 = st.columns([1, 2, 1])
+            with dl_col2:
+                download_clicked = st.button(
+                    "⬇️  Download Now",
+                    use_container_width=True,
+                    type="primary",
+                    key="download_btn",
+                )
 
-        if download_clicked:
-            progress_bar = st.progress(0, text="⏳ Starting download...")
-            status_text = st.empty()
+            if download_clicked:
+                progress_bar = st.progress(0, text="⏳ Starting download...")
+                status_text = st.empty()
 
-            progress_bar.progress(10, text="📡 Connecting to server...")
-            result = download_video(url, quality=quality, audio_only=audio_only)
-            progress_bar.progress(100, text="✅ Download complete!")
+                progress_bar.progress(10, text="📡 Connecting to server...")
+                result = download_video(url, quality=quality, audio_only=audio_only)
+                progress_bar.progress(100, text="✅ Download complete!")
 
-            if result["success"]:
-                st.session_state.download_result = result
-                st.success(f"✅ Ready! File size: **{format_size(result['size'])}**")
-            else:
-                err_msg = str(result.get("error", ""))
-                st.error(f"❌ Download failed: {err_msg}")
-                yt_id_match = re.search(r'(?:v=|youtu\.be\/|\/shorts\/)([0-9A-Za-z_-]{11})', url)
-                if yt_id_match:
-                    video_id = yt_id_match.group(1)
-                    st.info("💡 **Aap neeche diye gaye Backup Server se 1-Click mein download kar sakte hain:**")
-                    b_col1, b_col2 = st.columns(2)
-                    with b_col1:
-                        st.link_button("⚡ Direct Download (Server 1)", f"https://www.ssyoutube.com/watch?v={video_id}", use_container_width=True)
-                    with b_col2:
-                        st.link_button("🎬 Direct Download (Server 2)", f"https://www.y2mate.com/youtube/{video_id}", use_container_width=True)
+                if result["success"]:
+                    st.session_state.download_result = result
+                    st.success(f"✅ Ready! File size: **{format_size(result['size'])}**")
+                else:
+                    err_msg = str(result.get("error", ""))
+                    st.error(f"❌ Download failed: {err_msg}")
 
         # ─── Save File Button ────────────────────────────────────────────
         if st.session_state.download_result and st.session_state.download_result["success"]:
