@@ -435,7 +435,19 @@ if st.session_state.video_info:
     info = st.session_state.video_info
 
     if not info["success"]:
-        st.error(f"❌ Could not fetch video: {info.get('error', 'Unknown error')}")
+        err_msg = str(info.get('error', ''))
+        yt_id_match = re.search(r'(?:v=|youtu\.be\/|\/shorts\/)([0-9A-Za-z_-]{11})', url)
+        if yt_id_match and ("sign in" in err_msg.lower() or "bot" in err_msg.lower() or "429" in err_msg or "confirm" in err_msg.lower()):
+            video_id = yt_id_match.group(1)
+            st.warning("⚠️ **YouTube Cloud Bot Check:** YouTube ne free cloud server ke IP ko temporarily challenge kiya hai.")
+            st.markdown("### 🚀 **Aap neeche diye gaye Direct Servers se 1-Click mein download kar sakte hain:**")
+            fb_col1, fb_col2 = st.columns(2)
+            with fb_col1:
+                st.link_button("⚡ Direct Download (Fast Server 1)", f"https://www.ssyoutube.com/watch?v={video_id}", use_container_width=True)
+            with fb_col2:
+                st.link_button("🎬 Direct Download (Server 2 - MP4/MP3)", f"https://www.y2mate.com/youtube/{video_id}", use_container_width=True)
+        else:
+            st.error(f"❌ Could not fetch video: {err_msg}")
     else:
         st.markdown('<div class="custom-divider"></div>', unsafe_allow_html=True)
 
@@ -484,9 +496,17 @@ if st.session_state.video_info:
                 st.session_state.download_result = result
                 st.success(f"✅ Ready! File size: **{format_size(result['size'])}**")
             else:
-                st.error(f"❌ Download failed: {result.get('error', 'Unknown error')}")
-                if "login" in str(result.get("error", "")).lower():
-                    st.info("💡 This video might be private or require login.")
+                err_msg = str(result.get("error", ""))
+                st.error(f"❌ Download failed: {err_msg}")
+                yt_id_match = re.search(r'(?:v=|youtu\.be\/|\/shorts\/)([0-9A-Za-z_-]{11})', url)
+                if yt_id_match:
+                    video_id = yt_id_match.group(1)
+                    st.info("💡 **Aap neeche diye gaye Backup Server se 1-Click mein download kar sakte hain:**")
+                    b_col1, b_col2 = st.columns(2)
+                    with b_col1:
+                        st.link_button("⚡ Direct Download (Server 1)", f"https://www.ssyoutube.com/watch?v={video_id}", use_container_width=True)
+                    with b_col2:
+                        st.link_button("🎬 Direct Download (Server 2)", f"https://www.y2mate.com/youtube/{video_id}", use_container_width=True)
 
         # ─── Save File Button ────────────────────────────────────────────
         if st.session_state.download_result and st.session_state.download_result["success"]:
